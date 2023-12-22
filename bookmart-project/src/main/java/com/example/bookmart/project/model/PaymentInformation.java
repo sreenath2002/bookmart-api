@@ -5,62 +5,69 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 
+@Entity
 public class PaymentInformation {
 
-    @Column(name = "cardholder_name")
-    private String cardholderName;
 
-    @Column(name = "card_number")
-    private String cardNumber;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "expiration_date")
-    private LocalDate expirationDate;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "paymentType_id", nullable = false)
+    private PaymentType paymentType;
 
-    @Column(name = "cvv")
-    private String cvv;
+    @Column
+    private Long amount;
+
+
+
 
     public  PaymentInformation()
     {
 
     }
 
-    public PaymentInformation(String cardholderName, String cardNumber, LocalDate expirationDate, String cvv) {
-        this.cardholderName = cardholderName;
-        this.cardNumber = cardNumber;
-        this.expirationDate = expirationDate;
-        this.cvv = cvv;
+    public PaymentInformation(Long id, User user, PaymentType paymentType, Long amount) {
+        this.id = id;
+        this.user = user;
+        this.paymentType = paymentType;
+        this.amount = amount;
     }
 
-    public String getCardholderName() {
-        return cardholderName;
+    public Long getId() {
+        return id;
     }
 
-    public void setCardholderName(String cardholderName) {
-        this.cardholderName = cardholderName;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public String getCardNumber() {
-        return cardNumber;
+    public User getUser() {
+        return user;
     }
 
-    public void setCardNumber(String cardNumber) {
-        this.cardNumber = cardNumber;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public LocalDate getExpirationDate() {
-        return expirationDate;
+    public PaymentType getPaymentType() {
+        return paymentType;
     }
 
-    public void setExpirationDate(LocalDate expirationDate) {
-        this.expirationDate = expirationDate;
+    public void setPaymentType(PaymentType paymentType) {
+        this.paymentType = paymentType;
     }
 
-    public String getCvv() {
-        return cvv;
+    public Long getAmount() {
+        return amount;
     }
 
-    public void setCvv(String cvv) {
-        this.cvv = cvv;
+    public void setAmount(Long amount) {
+        this.amount = amount;
     }
 }
 

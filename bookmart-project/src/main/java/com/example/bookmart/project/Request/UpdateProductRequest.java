@@ -22,8 +22,7 @@ public class UpdateProductRequest {
 
     private int discountPresent;
 
-    @NotNull
-    private int quantity;
+
 
 
 
@@ -104,13 +103,7 @@ public class UpdateProductRequest {
         this.discountPresent = discountPresent;
     }
 
-    public int getQuantity() {
-        return quantity;
-    }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
 
 
 

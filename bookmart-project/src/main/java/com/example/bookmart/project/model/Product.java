@@ -36,8 +36,8 @@ public class Product {
     @Column(name = "discount_present")
     private int discountPresent;
 
-    @Column(name = "quantity")
-    private int quantity;
+    @OneToOne
+    private StockManagement stockManagement;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("product")
@@ -144,12 +144,12 @@ public class Product {
         this.discountPresent = discountPresent;
     }
 
-    public int getQuantity() {
-        return quantity;
+    public StockManagement getStockManagement() {
+        return stockManagement;
     }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
+    public void setStockManagement(StockManagement stockManagement) {
+        this.stockManagement = stockManagement;
     }
 
     public List<ProductImage> getImages() {
@@ -255,6 +255,7 @@ public class Product {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
     public void addImage(ProductImage productImage) {
     }
 }

@@ -2,7 +2,6 @@ package com.example.bookmart.project.Controller;
 
 import com.example.bookmart.project.Exception.CategoryException;
 import com.example.bookmart.project.Exception.ProductException;
-import com.example.bookmart.project.Exception.SubCategoryException;
 import com.example.bookmart.project.Exception.UserException;
 import com.example.bookmart.project.Repository.*;
 import com.example.bookmart.project.Request.*;
@@ -17,10 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -37,7 +34,7 @@ public class AdminController {
 
     private final UniversityRepository universityRepository;
 
-
+  private final StockManagementRepository stockManagementRepository;
 
     private final ProductRepository productRepository;
 
@@ -52,12 +49,13 @@ public class AdminController {
     private final PasswordEncoder passwordEncoder;
 
 
-    public AdminController(CourseRepository courseRepository, SubjectRepository subjectRepository, CategoryRepository categoryRepository, SemesterRepository semesterRepository, UniversityRepository universityRepository, ProductRepository productRepository, UserRepository userRepository, ProductServiceImp productServiceImp, CategoryServiceImp categoryServiceImp,  PasswordEncoder passwordEncoder) {
+    public AdminController(CourseRepository courseRepository, SubjectRepository subjectRepository, CategoryRepository categoryRepository, SemesterRepository semesterRepository, UniversityRepository universityRepository, StockManagementRepository stockManagementRepository, ProductRepository productRepository, UserRepository userRepository, ProductServiceImp productServiceImp, CategoryServiceImp categoryServiceImp, PasswordEncoder passwordEncoder) {
         this.courseRepository = courseRepository;
         this.subjectRepository = subjectRepository;
         this.categoryRepository = categoryRepository;
         this.semesterRepository = semesterRepository;
         this.universityRepository = universityRepository;
+        this.stockManagementRepository = stockManagementRepository;
 
         this.productRepository = productRepository;
         this.userRepository = userRepository;
@@ -331,6 +329,100 @@ public class AdminController {
         return new ResponseEntity<>(commonResponse, HttpStatus.OK);
     }
 
+    @PostMapping("/stockadd")
+    public ResponseEntity<CommonResponse<Object>> addStock(@RequestBody StokeAddRequest req) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        try {
+            Optional<Product> optionalProduct = productRepository.findById(req.getProductId());
+
+            if (optionalProduct.isPresent()) {
+                Product product = optionalProduct.get();
+
+
+                StockManagement stockManagement = new StockManagement();
+                stockManagement.setProduct(product);
+                stockManagement.setLeft(req.getQtyLeft());
+                stockManagement.setTotal(req.getQtyTotal());
+
+                stockManagementRepository.save(stockManagement);
+
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.CREATED));
+                commonResponse.setResult(stockManagement);
+                commonResponse.setMessage("Stock created successfully");
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.CREATED);
+            } else {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+                commonResponse.setMessage("Product Not Found for ID: " + req.getProductId());
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("Failed to create stock: " + e.getMessage());
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PutMapping ("/stokupdate/{stokeID}")
+    public ResponseEntity<CommonResponse<Object>> updateStock(@PathVariable Long stokeID, @RequestBody UpdateStokeRequest req) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        try {
+            Optional<StockManagement> optionalStockManagement=stockManagementRepository.findById(stokeID);
+
+
+            if (optionalStockManagement.isPresent()) {
+                StockManagement stockManagement = optionalStockManagement.get();
+
+
+
+                stockManagement.setLeft(req.getQtyLeft());
+                stockManagement.setTotal(req.getQtyTotal());
+
+                stockManagementRepository.save(stockManagement);
+
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+                commonResponse.setResult(stockManagement);
+                commonResponse.setMessage("Stock created successfully");
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+            } else {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+                commonResponse.setMessage("Product Not Found for ID: " );
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("Failed to create stock: " + e.getMessage());
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @GetMapping("/getStocksList")
+    public ResponseEntity<CommonResponse<List<StockManagement>>> getStocklist(){
+        CommonResponse<List<StockManagement>> commonResponse = new CommonResponse<>();
+        List<StockManagement> stockManagements = stockManagementRepository.findAll();
+        if (!stockManagements.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(stockManagements);
+            commonResponse.setMessage("All Stocks retrieved successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("No Stocks Available");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+
+    }
+
+
 
 
     @PostMapping("/product/createProduct")
@@ -529,14 +621,31 @@ public class AdminController {
 
 
     @GetMapping("/users")
-    public ResponseEntity<CommonResponse<List<User>>> getAllUsers() {
-        CommonResponse<List<User>> commonResponse = new CommonResponse<>();
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getAllUsers() {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
 
         List<User> users = userRepository.findAll();
 
         if (!users.isEmpty()) {
+            List<Map<String, Object>> userFieldsList = new ArrayList<>();
+
+            for (User user : users) {
+                if(user.getShowstatus().equals("true")) {
+                    Map<String, Object> userFields = new HashMap<>();
+                    userFields.put("id", user.getId());
+                    userFields.put("firstName", user.getFirstName());
+                    userFields.put("lastName", user.getLastName());
+                    userFields.put("mobileNumber", user.getMobile());
+                    userFields.put("email", user.getEmail());
+                    userFields.put("role", user.getRole());
+                    userFields.put("status",user.getStatus());
+
+                    userFieldsList.add(userFields);
+                }
+            }
+
             commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
-            commonResponse.setResult(users);
+            commonResponse.setResult(userFieldsList);
             commonResponse.setMessage("All users retrieved successfully");
 
             return new ResponseEntity<>(commonResponse, HttpStatus.OK);
@@ -547,6 +656,8 @@ public class AdminController {
             return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
         }
     }
+
+
 
     @GetMapping("/showproducts")
     public ResponseEntity<CommonResponse<List<Product>>> getAllProducts() {

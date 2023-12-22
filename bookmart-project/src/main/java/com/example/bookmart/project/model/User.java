@@ -23,13 +23,18 @@ public class User {
 
     private String status;
     private String showstatus;
+
+    private String profileimage;
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+
     private List<Address>address=new ArrayList<>();
 
-    @Embedded
-    @ElementCollection
-    @CollectionTable(name="payment_information",joinColumns = @JoinColumn(name = "user_id"))
-    private  List<PaymentInformation>pamentInformation =new ArrayList<>();
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+
+    private List<ShoppingCart>shoppingCart=new ArrayList<>();
+
+
+
 
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
     @JsonIgnore
@@ -43,7 +48,7 @@ public class User {
 
     }
 
-    public User(Long id, String firstName, String lastName, String password, String email, String role, String mobile, String status, String showstatus, List<Address> address, List<PaymentInformation> pamentInformation, List<Rating> ratings, List<Review> reviews) {
+    public User(Long id, String firstName, String lastName, String password, String email, String role, String mobile, String status, String showstatus, String profileimage, List<Address> address, List<ShoppingCart> shoppingCart, List<Rating> ratings, List<Review> reviews) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -53,8 +58,9 @@ public class User {
         this.mobile = mobile;
         this.status = status;
         this.showstatus = showstatus;
+        this.profileimage = profileimage;
         this.address = address;
-        this.pamentInformation = pamentInformation;
+        this.shoppingCart = shoppingCart;
         this.ratings = ratings;
         this.reviews = reviews;
     }
@@ -131,6 +137,14 @@ public class User {
         this.showstatus = showstatus;
     }
 
+    public String getProfileimage() {
+        return profileimage;
+    }
+
+    public void setProfileimage(String profileimage) {
+        this.profileimage = profileimage;
+    }
+
     public List<Address> getAddress() {
         return address;
     }
@@ -139,12 +153,12 @@ public class User {
         this.address = address;
     }
 
-    public List<PaymentInformation> getPamentInformation() {
-        return pamentInformation;
+    public List<ShoppingCart> getShoppingCart() {
+        return shoppingCart;
     }
 
-    public void setPamentInformation(List<PaymentInformation> pamentInformation) {
-        this.pamentInformation = pamentInformation;
+    public void setShoppingCart(List<ShoppingCart> shoppingCart) {
+        this.shoppingCart = shoppingCart;
     }
 
     public List<Rating> getRatings() {

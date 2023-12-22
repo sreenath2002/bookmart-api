@@ -24,8 +24,7 @@ public class CreateProductRequest {
 
     private int discountPresent;
 
-    @NotNull
-    private int quantity;
+
 
 
 
@@ -105,13 +104,7 @@ public class CreateProductRequest {
         this.discountPresent = discountPresent;
     }
 
-    public int getQuantity() {
-        return quantity;
-    }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
 
     public String getSubjects() {
         return subjects;

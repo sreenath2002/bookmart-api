@@ -132,7 +132,7 @@ public class ProductServiceImp implements  ProductService{
         product.setPrice(req.getPrice());
         product.setDiscountedPrice(req.getDiscountedPrice());
         product.setDiscountPresent(req.getDiscountPresent());
-        product.setQuantity(req.getQuantity());
+//        product.setQuantity(req.getQuantity());
         product.setStatus("true");
 
         product.setUniversity(university);
@@ -177,6 +177,9 @@ public class ProductServiceImp implements  ProductService{
 
     }
 
+    public List<Product> getProductsByIds(List<Long> productIds) {
+        return productRepository.findAllById(productIds);
+    }
 
     @Override
     public String deleteProduct(Long productId) throws ProductException {
@@ -210,7 +213,7 @@ public class ProductServiceImp implements  ProductService{
             existingProduct.setPrice(req.getPrice());
             existingProduct.setDiscountedPrice(req.getDiscountedPrice());
             existingProduct.setDiscountPresent(req.getDiscountPresent());
-            existingProduct.setQuantity(req.getQuantity());
+//            existingProduct.setQuantity(req.getQuantity());
 
 
             // Fetch IDs for various entities by names
