@@ -15,11 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Time;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalTime;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/user")
@@ -41,6 +40,8 @@ public class UserController {
     private final ShoppingCartRepository shoppingCartRepository;
     private  final OrderLineRepository orderLineRepository;
 
+    private final OrderStatusService orderStatusService;
+
     private final CancelResonsRepository cancelResonsRepository;
     private final  StatusRepository statusRepository;
     private  final UserServiceImp userServiceImp;
@@ -55,7 +56,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
 
-    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.productServiceImp = productServiceImp;
         this.paymentInformationRepository = paymentInformationRepository;
         this.orderStatusDetailsRepository = orderStatusDetailsRepository;
@@ -64,6 +65,7 @@ public class UserController {
         this.paymentTypeRepository = paymentTypeRepository;
         this.shoppingCartRepository = shoppingCartRepository;
         this.orderLineRepository = orderLineRepository;
+        this.orderStatusService = orderStatusService;
         this.cancelResonsRepository = cancelResonsRepository;
         this.statusRepository = statusRepository;
         this.userServiceImp = userServiceImp;
@@ -348,6 +350,22 @@ public class UserController {
             return new ResponseEntity<>(commonResponse, HttpStatus.OK);
         }
     }
+    @GetMapping("/getcart/{cartId}")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getCartDetailsById(@PathVariable Long cartId) {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
+        List<Map<String, Object>> cartDetailsList = cartService.getCartDetailsById(cartId);
+
+        if (cartDetailsList == null || cartDetailsList.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("No carts found for the given ID.");
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        }
+
+        commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+        commonResponse.setResult(cartDetailsList);
+        commonResponse.setMessage("Carts found.");
+        return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+    }
 
 
     @GetMapping("/paymenttypes")
@@ -427,11 +445,50 @@ public class UserController {
             return new ResponseEntity<>(commonResponse, HttpStatus.BAD_REQUEST);
         }
     }
-    @GetMapping("/orderline/{shoporderId}")
-    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getOrderLine(@PathVariable Long shoporderId) {
+    @PutMapping("/setcancelstatus/{orderLineId}")
+    public ResponseEntity<CommonResponse<Object>> setCancelStatus(@PathVariable Long orderLineId) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        Optional<Status> optionalStatus = statusRepository.findById(6L);
+        Optional<OrderLine> orderLine = orderLineRepository.findById(orderLineId);
+
+        if (orderLine.isPresent() && optionalStatus.isPresent()) {
+            OrderLine orderLine1 = orderLine.get();
+            orderLine1.setStatus("false"); // Assuming status is boolean
+
+            orderLineRepository.save(orderLine1);
+
+            Status status = optionalStatus.get();
+
+            OrderStatusDetails orderStatusDetails = new OrderStatusDetails();
+            orderStatusDetails.setReachedDate(new Date());
+            LocalTime currentTime = LocalTime.now();
+            Time reachedTime = Time.valueOf(currentTime);
+            orderStatusDetails.setReachedTime(reachedTime); // Setting current time
+
+            orderStatusDetails.setOrderLine(orderLine1);
+            orderStatusDetails.setStatus(status);
+
+            // Save orderStatusDetails entity to its repository if necessary
+            // orderStatusDetailsRepository.save(orderStatusDetails);
+
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("Status updated successfully for orderLineId: " + orderLineId);
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("Status with id 6 not found or OrderLine not found for id: " + orderLineId);
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+
+
+
+    @GetMapping("/orderline/{userId}")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getOrderLine(@PathVariable Long userId) {
         CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
 
-        List<Map<String, Object>> orderLines = orderLineService.getOrderLineDetails(shoporderId);
+        List<Map<String, Object>> orderLines = orderLineService.getOrderLineDetails(userId);
 
         if (orderLines.isEmpty()) {
             commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
@@ -441,6 +498,23 @@ public class UserController {
             commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
             commonResponse.setResult(orderLines);
             commonResponse.setMessage("Orders are Retrieved");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+    @GetMapping("/stauses/{orderId}")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getOrderStatus(@PathVariable Long orderId) {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
+
+        List<Map<String, Object>> statuses = orderStatusService.getOrderStatuesDetails(orderId);
+
+        if (statuses.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("States are Empty");
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(statuses);
+            commonResponse.setMessage("stauses are Retrieved");
             return new ResponseEntity<>(commonResponse, HttpStatus.OK);
         }
     }

@@ -5,10 +5,7 @@ import com.example.bookmart.project.model.Product;
 import com.example.bookmart.project.model.ShoppingCart;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,6 +16,7 @@ public class CartService {
     public CartService(ShoppingCartRepository shoppingCartRepository) {
         this.shoppingCartRepository = shoppingCartRepository;
     }
+
     public int removeProductFromCart(Long productId) {
         System.out.println("---------------------");
         int deletedItemsCount = shoppingCartRepository.deleteByProductId(productId);
@@ -36,6 +34,21 @@ public class CartService {
             productDetails.put("product", result[1]);
 
 
+            productDetails.put("quantity", result[2]);
+            productDetailsList.add(productDetails);
+        }
+
+        return productDetailsList;
+    }
+
+    public List<Map<String, Object>> getCartDetailsById(Long cartId) {
+        List<Object[]> resultList = shoppingCartRepository.findProductDetailsAndQuantitiesByCartId(cartId);
+        List<Map<String, Object>> productDetailsList = new ArrayList<>();
+
+        for (Object[] result : resultList) {
+            Map<String, Object> productDetails = new LinkedHashMap<>();
+            productDetails.put("shoppingCartId", result[0]);
+            productDetails.put("product", result[1]);
 
 
             productDetails.put("quantity", result[2]);

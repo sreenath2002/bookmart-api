@@ -25,22 +25,29 @@ public class OrderLine {
 
     private  Integer price;
 
-    @ManyToOne
-    @JoinColumn(name = "orderstatus_id", nullable = false)
-   private  OrderStatusDetails orderStatusDetails;
+
+    @Column
+    private Long userId;
+
+    @Column
+
+    private String status;
+
+
 
 
    public  OrderLine(){
 
    }
 
-    public OrderLine(Long id, Product product, ShopOrder shopOrder, Integer qty, Integer price, OrderStatusDetails orderStatusDetails) {
+    public OrderLine(Long id, Product product, ShopOrder shopOrder, Integer qty, Integer price, Long userId, String status) {
         this.id = id;
         this.product = product;
         this.shopOrder = shopOrder;
         this.qty = qty;
         this.price = price;
-        this.orderStatusDetails = orderStatusDetails;
+        this.userId = userId;
+        this.status = status;
     }
 
     public Long getId() {
@@ -83,11 +90,19 @@ public class OrderLine {
         this.price = price;
     }
 
-    public OrderStatusDetails getOrderStatusDetails() {
-        return orderStatusDetails;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setOrderStatusDetails(OrderStatusDetails orderStatusDetails) {
-        this.orderStatusDetails = orderStatusDetails;
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

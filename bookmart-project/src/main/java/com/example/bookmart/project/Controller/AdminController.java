@@ -7,6 +7,8 @@ import com.example.bookmart.project.Repository.*;
 import com.example.bookmart.project.Request.*;
 import com.example.bookmart.project.Response.CommonResponse;
 import com.example.bookmart.project.Service.CategoryServiceImp;
+import com.example.bookmart.project.Service.OrderLineService;
+import com.example.bookmart.project.Service.OrderStatusService;
 import com.example.bookmart.project.Service.ProductServiceImp;
 import com.example.bookmart.project.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @RestController
@@ -31,6 +32,10 @@ public class AdminController {
 
     private final CategoryRepository categoryRepository;
     private  final SemesterRepository semesterRepository;
+    private  final OrderStatusService orderStatusService;
+    private final OrderLineRepository orderLineRepository;
+    private final OrderStatusDetailsRepository orderStatusDetailsRepository;
+    private final  StatusRepository statusRepository;
 
     private final UniversityRepository universityRepository;
 
@@ -44,16 +49,20 @@ public class AdminController {
 
     private final CategoryServiceImp categoryServiceImp;
 
-
+private final OrderLineService orderLineService;
 
     private final PasswordEncoder passwordEncoder;
 
 
-    public AdminController(CourseRepository courseRepository, SubjectRepository subjectRepository, CategoryRepository categoryRepository, SemesterRepository semesterRepository, UniversityRepository universityRepository, StockManagementRepository stockManagementRepository, ProductRepository productRepository, UserRepository userRepository, ProductServiceImp productServiceImp, CategoryServiceImp categoryServiceImp, PasswordEncoder passwordEncoder) {
+    public AdminController(CourseRepository courseRepository, SubjectRepository subjectRepository, CategoryRepository categoryRepository, SemesterRepository semesterRepository, OrderStatusService orderStatusService, OrderLineRepository orderLineRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, StatusRepository statusRepository, UniversityRepository universityRepository, StockManagementRepository stockManagementRepository, ProductRepository productRepository, UserRepository userRepository, ProductServiceImp productServiceImp, CategoryServiceImp categoryServiceImp, OrderLineService orderLineService, PasswordEncoder passwordEncoder) {
         this.courseRepository = courseRepository;
         this.subjectRepository = subjectRepository;
         this.categoryRepository = categoryRepository;
         this.semesterRepository = semesterRepository;
+        this.orderStatusService = orderStatusService;
+        this.orderLineRepository = orderLineRepository;
+        this.orderStatusDetailsRepository = orderStatusDetailsRepository;
+        this.statusRepository = statusRepository;
         this.universityRepository = universityRepository;
         this.stockManagementRepository = stockManagementRepository;
 
@@ -61,6 +70,7 @@ public class AdminController {
         this.userRepository = userRepository;
         this.productServiceImp = productServiceImp;
         this.categoryServiceImp = categoryServiceImp;
+        this.orderLineService = orderLineService;
 
         this.passwordEncoder = passwordEncoder;
     }
@@ -710,4 +720,106 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonResponse);
         }
     }
+    @GetMapping("/getallorders")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getUserCart() {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
+
+        List<Map<String, Object>> orderDetails= orderLineService.getOrderDetails();
+
+        if (orderDetails.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("Orders are Empty");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(orderDetails);
+            commonResponse.setMessage("Orders are Retrieved");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+
+    @PostMapping("/statuschange")
+    public ResponseEntity<CommonResponse<Object>> changeStatus(@RequestBody StatusUpdateRequest req) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+        try {
+            Optional<Status> optionalStatus = statusRepository.findById(req.getStatusId());
+            Optional<OrderLine> optionalOrderLine = orderLineRepository.findById(req.getOrderLineId());
+
+            if (optionalStatus.isPresent() && optionalOrderLine.isPresent()) {
+                Status status = optionalStatus.get();
+                OrderLine orderLine = optionalOrderLine.get();
+
+                OrderStatusDetails orderStatusDetails = new OrderStatusDetails();
+                orderStatusDetails.setLocation(req.getLocation());
+                orderStatusDetails.setReachedTime(req.getReachedTime());
+                orderStatusDetails.setReachedDate(req.getReachedDate());
+                orderStatusDetails.setOrderLine(orderLine);
+                orderStatusDetails.setStatus(status);
+
+                orderStatusDetailsRepository.save(orderStatusDetails);
+
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+                commonResponse.setMessage("Status updated successfully");
+                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+            } else {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+                commonResponse.setMessage("Status or OrderLine not found");
+                return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonResponse);
+        }
+    }
+    @GetMapping("/allstatues")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getAllStatus() {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
+
+        List<Status> statuses = statusRepository.findAll();
+
+        if (!statuses.isEmpty()) {
+            List<Map<String, Object>> statusfield = new ArrayList<>();
+
+            for (Status status : statuses) {
+
+                    Map<String, Object> statuesFields = new HashMap<>();
+                statuesFields.put("id", status.getId());
+                statuesFields.put("name", status.getName());
+
+
+                statusfield.add(statuesFields);
+
+            }
+
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(statusfield );
+            commonResponse.setMessage("All statues retrieved successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("No status found");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        }
+    }
+    @GetMapping("/stauses/{orderId}")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getOrderStatus(@PathVariable Long orderId) {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
+
+        List<Map<String, Object>> statuses = orderStatusService.getOrderStatues(orderId);
+
+        if (statuses.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("States are Empty");
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(statuses);
+            commonResponse.setMessage("stauses are Retrieved");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+
+
 }

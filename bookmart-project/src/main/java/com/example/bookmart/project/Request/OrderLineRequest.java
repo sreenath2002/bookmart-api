@@ -14,6 +14,8 @@ public class OrderLineRequest {
 
     private List<Integer> price;
 
+    private Long userId;
+
 
     public OrderLineRequest()
     {
@@ -50,6 +52,14 @@ public class OrderLineRequest {
 
     public void setPrice(List<Integer> price) {
         this.price = price;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }
 
