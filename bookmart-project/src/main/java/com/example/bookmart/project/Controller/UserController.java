@@ -48,6 +48,9 @@ public class UserController {
     private final AddressServiceImp addressServiceImp;
     private final CartService cartService;
 
+
+
+  private final CuponRepository cuponRepository;
     private final CancellationService cancellationService;
 
     private final OrderLineService orderLineService;
@@ -56,7 +59,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
 
-    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.productServiceImp = productServiceImp;
         this.paymentInformationRepository = paymentInformationRepository;
         this.orderStatusDetailsRepository = orderStatusDetailsRepository;
@@ -71,6 +74,7 @@ public class UserController {
         this.userServiceImp = userServiceImp;
         this.addressServiceImp = addressServiceImp;
         this.cartService = cartService;
+        this.cuponRepository = cuponRepository;
         this.cancellationService = cancellationService;
         this.orderLineService = orderLineService;
         this.productRepository=productRepository;
@@ -481,6 +485,106 @@ public class UserController {
             return new ResponseEntity<>(commonResponse, HttpStatus.OK);
         }
     }
+
+    @GetMapping("/getCouponDiscount/{couponId}")
+    public ResponseEntity<CommonResponse<Integer>> getCouponDiscount(@PathVariable Long couponId) {
+        CommonResponse<Integer> commonResponse = new CommonResponse<>();
+
+        try {
+            Optional<Cupons> optionalCoupon = cuponRepository.findById(couponId);
+
+            if (optionalCoupon.isPresent()) {
+                Cupons coupon = optionalCoupon.get();
+                Integer discount = coupon.getDiscount();
+
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+                commonResponse.setResult(discount);
+                commonResponse.setMessage("Discount retrieved successfully");
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+            } else {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+                commonResponse.setMessage("Coupon with ID " + couponId + " not found");
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("Failed to retrieve Discount: " + e.getMessage());
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/getCouponsList")
+    public ResponseEntity<CommonResponse<List<Cupons>>> getCouponlist() {
+        CommonResponse<List<Cupons>> commonResponse = new CommonResponse<>();
+        List<Cupons> coupons = cuponRepository.findAll();
+
+        // Get the current date
+        Date currentDate = new Date();
+
+        for (Cupons coupon : coupons) {
+            Date validUpto = coupon.getValid_uptoDate();
+
+
+            if (currentDate.after(validUpto)) {
+                coupon.setIs_activeState(false);
+                cuponRepository.save(coupon);
+            }
+        }
+
+        // Retrieve the updated list after setting the status of expired coupons to false
+        List<Cupons> updatedCoupons = cuponRepository.findAll();
+
+        if (!updatedCoupons.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(updatedCoupons);
+            commonResponse.setMessage("Coupons retrieved successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("No Coupons Available");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+    @GetMapping("/getValidCouponsList")
+    public ResponseEntity<CommonResponse<List<Cupons>>> getValidCouponlist() {
+        CommonResponse<List<Cupons>> commonResponse = new CommonResponse<>();
+        List<Cupons> coupons = cuponRepository.findAll();
+        List<Cupons> validCoupons = new ArrayList<>();
+
+        // Get the current date
+        Date currentDate = new Date();
+
+        for (Cupons coupon : coupons) {
+            Date validFrom = coupon.getValid_fromDate();
+            Date validUpto = coupon.getValid_uptoDate();
+
+            // Check if the current date is between validFrom and validUpto dates
+            if (currentDate.after(validFrom) && currentDate.before(validUpto)) {
+                validCoupons.add(coupon);
+            }
+        }
+
+        if (!validCoupons.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(validCoupons);
+            commonResponse.setMessage("Valid Coupons retrieved successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("No Valid Coupons Available");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+
+
+
 
 
 

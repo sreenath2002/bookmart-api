@@ -12,6 +12,7 @@ import com.example.bookmart.project.Service.OrderStatusService;
 import com.example.bookmart.project.Service.ProductServiceImp;
 import com.example.bookmart.project.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,6 +44,8 @@ public class AdminController {
 
     private final ProductRepository productRepository;
 
+    private final CuponRepository cuponRepository;
+
     private final UserRepository userRepository;
 
     private final ProductServiceImp productServiceImp;
@@ -54,7 +57,7 @@ private final OrderLineService orderLineService;
     private final PasswordEncoder passwordEncoder;
 
 
-    public AdminController(CourseRepository courseRepository, SubjectRepository subjectRepository, CategoryRepository categoryRepository, SemesterRepository semesterRepository, OrderStatusService orderStatusService, OrderLineRepository orderLineRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, StatusRepository statusRepository, UniversityRepository universityRepository, StockManagementRepository stockManagementRepository, ProductRepository productRepository, UserRepository userRepository, ProductServiceImp productServiceImp, CategoryServiceImp categoryServiceImp, OrderLineService orderLineService, PasswordEncoder passwordEncoder) {
+    public AdminController(CourseRepository courseRepository, SubjectRepository subjectRepository, CategoryRepository categoryRepository, SemesterRepository semesterRepository, OrderStatusService orderStatusService, OrderLineRepository orderLineRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, StatusRepository statusRepository, UniversityRepository universityRepository, StockManagementRepository stockManagementRepository, ProductRepository productRepository, CuponRepository cuponRepository, UserRepository userRepository, ProductServiceImp productServiceImp, CategoryServiceImp categoryServiceImp, OrderLineService orderLineService, PasswordEncoder passwordEncoder) {
         this.courseRepository = courseRepository;
         this.subjectRepository = subjectRepository;
         this.categoryRepository = categoryRepository;
@@ -67,6 +70,7 @@ private final OrderLineService orderLineService;
         this.stockManagementRepository = stockManagementRepository;
 
         this.productRepository = productRepository;
+        this.cuponRepository = cuponRepository;
         this.userRepository = userRepository;
         this.productServiceImp = productServiceImp;
         this.categoryServiceImp = categoryServiceImp;
@@ -411,6 +415,127 @@ private final OrderLineService orderLineService;
             return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @PostMapping("/addcupon")
+    public ResponseEntity<CommonResponse<Object>> addCupon(@RequestBody AdminAddCoouponReQuest req) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        try {
+            // Validate the incoming request
+            if (req.getCode() == null || req.getStartdate() == null || req.getExprDate() == null || req.getDiscountRate() == null) {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.BAD_REQUEST));
+                commonResponse.setMessage("Invalid request. Missing required fields.");
+                return new ResponseEntity<>(commonResponse, HttpStatus.BAD_REQUEST);
+            }
+
+            Cupons cupons = new Cupons();
+            cupons.setCode(req.getCode());
+            cupons.setValid_fromDate(req.getStartdate());
+            cupons.setValid_uptoDate(req.getExprDate());
+            cupons.setDiscount(req.getDiscountRate());
+            cupons.setIs_activeState(true);
+
+            // Save the coupon
+            Cupons savedCoupon = cuponRepository.save(cupons);
+
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.CREATED));
+            commonResponse.setResult(savedCoupon);
+            commonResponse.setMessage("Coupon created successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.CREATED);
+
+        } catch (Exception e) {
+            // Log the exception details for debugging purposes
+
+
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("Failed to create Coupon: " + e.getMessage());
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/updatecupon/{couponId}")
+    public ResponseEntity<CommonResponse<Object>> updateCupon(@PathVariable Long couponId, @RequestBody AdminUpdateCouponRequest req) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        try {
+            Optional<Cupons> optionalCupons = cuponRepository.findById(couponId);
+
+            if (optionalCupons.isPresent()) {
+                Cupons cupons1 = optionalCupons.get();
+
+
+                if (req.getCode() != null && req.getStartdate() != null && req.getExprDate() != null && req.getDiscountRate() != null) {
+                    cupons1.setCode(req.getCode());
+                    cupons1.setValid_fromDate(req.getStartdate());
+                    cupons1.setValid_uptoDate(req.getExprDate());
+                    cupons1.setDiscount(req.getDiscountRate());
+                    cupons1.setIs_activeState(true);
+
+                    Cupons updatedCoupon = cuponRepository.save(cupons1);
+
+                    commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+                    commonResponse.setResult(updatedCoupon);
+                    commonResponse.setMessage("Coupon updated successfully");
+
+                    return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+                } else {
+                    commonResponse.setStatuscode(String.valueOf(HttpStatus.BAD_REQUEST));
+                    commonResponse.setMessage("Invalid request. Missing required fields.");
+                    return new ResponseEntity<>(commonResponse, HttpStatus.BAD_REQUEST);
+                }
+            } else {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+                commonResponse.setMessage("Coupon with ID " + couponId + " not found.");
+                return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+
+
+
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("Failed to update Coupon: " + e.getMessage());
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @GetMapping("/getCouponsList")
+    public ResponseEntity<CommonResponse<List<Cupons>>> getCouponlist() {
+        CommonResponse<List<Cupons>> commonResponse = new CommonResponse<>();
+        List<Cupons> coupons = cuponRepository.findAll();
+
+        // Get the current date
+        Date currentDate = new Date();
+
+        for (Cupons coupon : coupons) {
+            Date validUpto = coupon.getValid_uptoDate();
+
+
+            if (currentDate.after(validUpto)) {
+                coupon.setIs_activeState(false);
+                cuponRepository.save(coupon);
+            }
+        }
+
+        // Retrieve the updated list after setting the status of expired coupons to false
+        List<Cupons> updatedCoupons = cuponRepository.findAll();
+
+        if (!updatedCoupons.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(updatedCoupons);
+            commonResponse.setMessage("Coupons retrieved successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("No Coupons Available");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+
 
 
     @GetMapping("/getStocksList")
