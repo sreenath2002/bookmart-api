@@ -1,26 +1,19 @@
 package com.example.bookmart.project.Request;
 
-import com.example.bookmart.project.model.Product;
-
 import java.util.List;
 
-public class OrderLineRequest {
-
+public class OrderPlacedEmailRequest {
     private List<Long> productIdList;
 
-    private Long orderId;
+
 
     private List<Integer> qty;
 
     private List<Integer> price;
 
-    private Long userId;
 
-
-
-
-    public OrderLineRequest()
-    {
+    private String enteredemail;
+    public OrderPlacedEmailRequest(){
 
     }
 
@@ -30,14 +23,6 @@ public class OrderLineRequest {
 
     public void setProductIdList(List<Long> productIdList) {
         this.productIdList = productIdList;
-    }
-
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
     }
 
     public List<Integer> getQty() {
@@ -56,13 +41,14 @@ public class OrderLineRequest {
         this.price = price;
     }
 
-    public Long getUserId() {
-        return userId;
+
+
+
+    public String getEnteredemail() {
+        return enteredemail;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setEnteredemail(String enteredemail) {
+        this.enteredemail = enteredemail;
     }
 }
-
-

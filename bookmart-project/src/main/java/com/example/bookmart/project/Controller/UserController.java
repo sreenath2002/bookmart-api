@@ -39,7 +39,7 @@ public class UserController {
     private final PaymentTypeRepository paymentTypeRepository;
     private final ShoppingCartRepository shoppingCartRepository;
     private  final OrderLineRepository orderLineRepository;
-
+ private final Wishlistservices wishlistservices;
     private final OrderStatusService orderStatusService;
 
     private final CancelResonsRepository cancelResonsRepository;
@@ -48,7 +48,7 @@ public class UserController {
     private final AddressServiceImp addressServiceImp;
     private final CartService cartService;
 
-
+  private final WishlistRepository wishlistRepository;
 
   private final CuponRepository cuponRepository;
     private final CancellationService cancellationService;
@@ -59,7 +59,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
 
-    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, Wishlistservices wishlistservices, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, WishlistRepository wishlistRepository, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.productServiceImp = productServiceImp;
         this.paymentInformationRepository = paymentInformationRepository;
         this.orderStatusDetailsRepository = orderStatusDetailsRepository;
@@ -68,12 +68,14 @@ public class UserController {
         this.paymentTypeRepository = paymentTypeRepository;
         this.shoppingCartRepository = shoppingCartRepository;
         this.orderLineRepository = orderLineRepository;
+        this.wishlistservices = wishlistservices;
         this.orderStatusService = orderStatusService;
         this.cancelResonsRepository = cancelResonsRepository;
         this.statusRepository = statusRepository;
         this.userServiceImp = userServiceImp;
         this.addressServiceImp = addressServiceImp;
         this.cartService = cartService;
+        this.wishlistRepository = wishlistRepository;
         this.cuponRepository = cuponRepository;
         this.cancellationService = cancellationService;
         this.orderLineService = orderLineService;
@@ -141,6 +143,7 @@ public class UserController {
                 userDetails.put("lastName", user.getLastName());
                 userDetails.put("email", user.getEmail());
                 userDetails.put("phoneNumber", user.getMobile());
+                userDetails.put("profileImage",user.getProfileimage());
 
                 commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
                 commonResponse.setResult(userDetails);
@@ -336,6 +339,77 @@ public class UserController {
 
             return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PostMapping("/addtowishlist")
+    public ResponseEntity<CommonResponse<Object>> addToCwishlist(@RequestBody AddtowishlistRequest req) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        try {
+            Optional<User> userOptional = userRepository.findById(req.getUserId());
+            Optional<Product> productOptional = productRepository.findById(req.getProductId());
+
+            if (userOptional.isPresent() && productOptional.isPresent()) {
+                User user = userOptional.get();
+                Product product = productOptional.get();
+
+               Userwishlist userwishlist=new Userwishlist();
+               userwishlist.setUser(user);
+                userwishlist.setProduct(product);
+                userwishlist.setQuantity(req.getQuantity());
+
+                wishlistRepository.save(userwishlist);
+
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+                commonResponse.setResult(userwishlist.getProduct());
+                commonResponse.setMessage("Added to Wishlist Successfully");
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+            } else {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+                commonResponse.setMessage("User or Product not found");
+
+                return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("Failed to add to wishlist d: " + e.getMessage());
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @GetMapping("/userwishlist/{userId}")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getUserWishlist(@PathVariable Long userId) {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
+
+        List<Map<String, Object>> wishlistDetails= wishlistservices.getProductDetailsAndQuantitiesByUserIdFromwishlist(userId);
+
+        if (wishlistDetails.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("Wishlist is Empty is Empty");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(wishlistDetails);
+            commonResponse.setMessage("Wishlist is Retrieved");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+    @GetMapping("/getwishlist/{wishlistId}")
+    public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getWishlistDetailsById(@PathVariable Long wishlistId) {
+        CommonResponse<List<Map<String, Object>>> commonResponse = new CommonResponse<>();
+        List<Map<String, Object>> wishlistDetailsList = wishlistservices.getWishlistDetailsById(wishlistId);
+
+        if (wishlistDetailsList == null || wishlistDetailsList.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("No wishlist found for the given ID.");
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        }
+
+        commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+        commonResponse.setResult(wishlistDetailsList);
+        commonResponse.setMessage("wishlist found.");
+        return new ResponseEntity<>(commonResponse, HttpStatus.OK);
     }
     @GetMapping("/usercart/{userId}")
     public ResponseEntity<CommonResponse<List<Map<String, Object>>>> getUserCart(@PathVariable Long userId) {
@@ -733,15 +807,66 @@ public class UserController {
 
         try {
             shoppingCartRepository.deleteById(cartId);
+            System.out.println("removed........");
             commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
             commonResponse.setMessage("Removed cart item with ID: " + cartId);
             return new ResponseEntity<>(commonResponse, HttpStatus.OK);
         } catch (Exception e) {
+
             commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
             commonResponse.setMessage("No cart item found with ID: " + cartId);
             return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
         }
     }
+    @DeleteMapping("/removefromwishlist/{wishlistId}")
+    public ResponseEntity<CommonResponse<Object>> removeFromwishlistByCartId(@PathVariable Long wishlistId) {
+        System.out.println("---------Remove------------");
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        try {
+            wishlistRepository.deleteById(wishlistId);
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("Removed wishlist item with ID: " + wishlistId);
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("No wishlist item found with ID: " + wishlistId);
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        }
+    }
+    @GetMapping("/productidsfromcart/{userId}")
+    public ResponseEntity<CommonResponse<Object>> getProductIdsByUserId(@PathVariable Long userId) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+        List<Long> productIds = shoppingCartRepository.findDistinctProductIdsByUserId(userId);
+
+        if (productIds.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("No product IDs found for the user.");
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        }
+
+        commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+        commonResponse.setResult(productIds);
+        commonResponse.setMessage("Product IDs retrieved successfully.");
+        return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+    }
+    @GetMapping("/productidsfromwishlist/{userId}")
+    public ResponseEntity<CommonResponse<Object>> getProductIdsFromwishlistByUserId(@PathVariable Long userId) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+        List<Long> productIds = wishlistRepository.findDistinctProductIdsByUserId(userId);
+
+        if (productIds.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("No product IDs found for the user.");
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        }
+
+        commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+        commonResponse.setResult(productIds);
+        commonResponse.setMessage("Product IDs retrieved successfully.");
+        return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+    }
+
 
     @PutMapping("/incrementquantity/{cartId}")
     public ResponseEntity<CommonResponse<Object>> incrementQuantity(@PathVariable Long cartId) {

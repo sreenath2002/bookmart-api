@@ -51,9 +51,10 @@ public class SecurityConfig {
                                 .requestMatchers("/api/products/subjectsFilter/{courseName}").permitAll()
                                 .requestMatchers("/api/products/coursefilter/{categoryName}").permitAll()
                                 .requestMatchers("/api/products/semesterfilter/{categoryName}").permitAll()
+                                .requestMatchers("/api/user/productidsfromcart/{userId}").permitAll()
 //                                .requestMatchers("/api/auth/semester/{categoryName}").permitAll()
 //                                .requestMatchers("/api/auth/subjects/{courseName}").permitAll()
-
+                                .requestMatchers("/api/user/productidsfromwishlist/{userId}").permitAll()
 
                                 .requestMatchers("/api/auth/logout").authenticated()
 //                                .requestMatchers("/admin/**").hasRole("ADMIN") // Requires ROLE_ADMIN for /admin/**
