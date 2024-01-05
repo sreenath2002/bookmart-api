@@ -19,19 +19,24 @@ public class Review {
     @JsonIgnore
     private Product product;
 
-    @ManyToOne
-    @JoinColumn(name="user_id")
-    private User user;
+
+    private String userfirstname;
+
+    private String userlastname;
+
+    private Integer rating;
     private LocalDateTime createdAt;
 
     public Review() {
     }
 
-    public Review(Long id, String review, Product product, User user, LocalDateTime createdAt) {
+    public Review(Long id, String review, Product product, String userfirstname, String userlastname, Integer rating, LocalDateTime createdAt) {
         this.id = id;
         this.review = review;
         this.product = product;
-        this.user = user;
+        this.userfirstname = userfirstname;
+        this.userlastname = userlastname;
+        this.rating = rating;
         this.createdAt = createdAt;
     }
 
@@ -59,12 +64,28 @@ public class Review {
         this.product = product;
     }
 
-    public User getUser() {
-        return user;
+    public String getUserfirstname() {
+        return userfirstname;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserfirstname(String userfirstname) {
+        this.userfirstname = userfirstname;
+    }
+
+    public String getUserlastname() {
+        return userlastname;
+    }
+
+    public void setUserlastname(String userlastname) {
+        this.userlastname = userlastname;
+    }
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public void setRating(Integer rating) {
+        this.rating = rating;
     }
 
     public LocalDateTime getCreatedAt() {

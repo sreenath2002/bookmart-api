@@ -13,7 +13,9 @@ public class AuthResponse {
 
     private Long id;
 
-    public AuthResponse(String jwt, String message, String role, String email, String firstName, String lastName, String mobile, Long id) {
+    private String profilepictute;
+
+    public AuthResponse(String jwt, String message, String role, String email, String firstName, String lastName, String mobile, Long id, String profilepictute) {
         this.jwt = jwt;
         this.message = message;
         this.role = role;
@@ -22,6 +24,7 @@ public class AuthResponse {
         this.lastName = lastName;
         this.mobile = mobile;
         this.id = id;
+        this.profilepictute = profilepictute;
     }
 
     public AuthResponse() {
@@ -90,5 +93,13 @@ public class AuthResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getProfilepictute() {
+        return profilepictute;
+    }
+
+    public void setProfilepictute(String profilepictute) {
+        this.profilepictute = profilepictute;
     }
 }

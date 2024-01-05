@@ -40,15 +40,13 @@ public class User {
     @JsonIgnore
     private List<Rating> ratings=new ArrayList<>();
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
-    private List<Review>reviews=new ArrayList<>();
+
     //    private LocalDateTime createdAt;
     public User (){
 
     }
 
-    public User(Long id, String firstName, String lastName, String password, String email, String role, String mobile, String status, String showstatus, String profileimage, List<Address> address, List<ShoppingCart> shoppingCart, List<Rating> ratings, List<Review> reviews) {
+    public User(Long id, String firstName, String lastName, String password, String email, String role, String mobile, String status, String showstatus, String profileimage, List<Address> address, List<ShoppingCart> shoppingCart, List<Rating> ratings) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -62,7 +60,7 @@ public class User {
         this.address = address;
         this.shoppingCart = shoppingCart;
         this.ratings = ratings;
-        this.reviews = reviews;
+
     }
 
     public Long getId() {
@@ -169,11 +167,5 @@ public class User {
         this.ratings = ratings;
     }
 
-    public List<Review> getReviews() {
-        return reviews;
-    }
 
-    public void setReviews(List<Review> reviews) {
-        this.reviews = reviews;
-    }
 }

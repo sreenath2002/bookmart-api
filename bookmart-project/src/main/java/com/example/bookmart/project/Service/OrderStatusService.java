@@ -50,7 +50,8 @@ public class OrderStatusService {
             // Assuming the sequence of elements in the resultList matches the expected order of details
             orderLineDetails.put("id", result[0]);
             orderLineDetails.put("statusId",result[1]);
-            orderLineDetails.put("status", result[2]);
+            orderLineDetails.put("location",result[2]);
+            orderLineDetails.put("status", result[3]);
             orderLineDetailsList.add(orderLineDetails);
         }
 

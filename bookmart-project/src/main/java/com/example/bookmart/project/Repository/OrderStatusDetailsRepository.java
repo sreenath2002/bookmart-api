@@ -14,7 +14,7 @@ public interface OrderStatusDetailsRepository extends JpaRepository<OrderStatusD
 
     List<OrderStatusDetails> findByOrderLineId(Long orderLineId);
 
-    @Query("SELECT s.id,  s.status.id,s.status.name FROM OrderStatusDetails s WHERE s.orderLine.id = :orderId ORDER BY s.reachedDate DESC LIMIT 1")
+    @Query("SELECT s.id,  s.status.id,s.location,s.status.name FROM OrderStatusDetails s WHERE s.orderLine.id = :orderId ORDER BY s.id DESC LIMIT 1")
     List<Object[]> findFirstOrderStatusByOrderIdWithLimit(Long orderId);
 
 

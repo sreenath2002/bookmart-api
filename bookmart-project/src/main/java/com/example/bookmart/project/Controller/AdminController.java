@@ -427,6 +427,14 @@ private final OrderLineService orderLineService;
                 return new ResponseEntity<>(commonResponse, HttpStatus.BAD_REQUEST);
             }
 
+
+            Cupons existingCoupon = cuponRepository.findByCode(req.getCode());
+            if (existingCoupon != null) {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+                commonResponse.setMessage("exists");
+                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+            }
+
             Cupons cupons = new Cupons();
             cupons.setCode(req.getCode());
             cupons.setValid_fromDate(req.getStartdate());
@@ -445,20 +453,47 @@ private final OrderLineService orderLineService;
 
         } catch (Exception e) {
             // Log the exception details for debugging purposes
-
-
             commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
             commonResponse.setMessage("Failed to create Coupon: " + e.getMessage());
 
             return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @GetMapping("/coupons/active/count")
+    public ResponseEntity<CommonResponse<Long>> getActiveCouponCount() {
+        CommonResponse<Long> commonResponse = new CommonResponse<>();
+
+        try {
+
+            long activeCouponCount = cuponRepository.countByIsActiveState(true);
+
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(activeCouponCount);
+            commonResponse.setMessage("Total count of active coupons retrieved successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("Failed to retrieve total count of active coupons: " + e.getMessage());
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 
     @PutMapping("/updatecupon/{couponId}")
     public ResponseEntity<CommonResponse<Object>> updateCupon(@PathVariable Long couponId, @RequestBody AdminUpdateCouponRequest req) {
         CommonResponse<Object> commonResponse = new CommonResponse<>();
 
         try {
+            Cupons existingCoupon = cuponRepository.findByCode(req.getCode());
+            if (existingCoupon != null) {
+                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+                commonResponse.setMessage("exists");
+                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+            }
             Optional<Cupons> optionalCupons = cuponRepository.findById(couponId);
 
             if (optionalCupons.isPresent()) {
@@ -499,6 +534,27 @@ private final OrderLineService orderLineService;
             return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @DeleteMapping("/delete/deletecoupon/{couponId}")
+    public ResponseEntity<CommonResponse<Object>> deleteCouponById(@PathVariable Long couponId) {
+        System.out.println(couponId);
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+        System.out.println(couponId);
+        Optional<Cupons> optionalCoupon = cuponRepository.findById(couponId);
+        if (optionalCoupon.isPresent()) {
+            System.out.println(couponId);
+            cuponRepository.deleteById(couponId);
+            System.out.println(couponId);
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("Coupon deleted successfully");
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
+            commonResponse.setMessage("Coupon not found with ID: " + couponId);
+
+            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+        }
+    }
 
 
     @GetMapping("/getCouponsList")
@@ -533,6 +589,51 @@ private final OrderLineService orderLineService;
             commonResponse.setMessage("No Coupons Available");
 
             return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }
+    }
+    @GetMapping("/userscount")
+    public ResponseEntity<CommonResponse<Long>> getUserCount() {
+        CommonResponse<Long> commonResponse = new CommonResponse<>();
+        try {
+            Long userCount = userRepository.countByShowstatusIsTrue();
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK.value()));
+            commonResponse.setResult(userCount);
+            commonResponse.setMessage("Count of Users Retrieved");
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+            commonResponse.setMessage("Error retrieving user count");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonResponse);
+        }
+    }
+    @GetMapping("/productcount")
+    public ResponseEntity<CommonResponse<Long>> getProductCount() {
+        CommonResponse<Long> commonResponse = new CommonResponse<>();
+        try {
+            Long productcount = productRepository.countByStatusIsTrue();
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK.value()));
+            commonResponse.setResult(productcount);
+            commonResponse.setMessage("Count of Products Retrieved");
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+            commonResponse.setMessage("Error retrieving product count");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonResponse);
+        }
+    }
+    @GetMapping("/orderscount")
+    public ResponseEntity<CommonResponse<Long>> getOrderCount() {
+        CommonResponse<Long> commonResponse = new CommonResponse<>();
+        try {
+            Long ordercount = orderLineRepository.count();
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK.value()));
+            commonResponse.setResult(ordercount );
+            commonResponse.setMessage("Count of Orders Retrieved");
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+            commonResponse.setMessage("Error retrieving Orders count");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonResponse);
         }
     }
 

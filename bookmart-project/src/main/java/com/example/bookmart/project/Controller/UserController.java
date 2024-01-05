@@ -29,7 +29,7 @@ public class UserController {
     private final ProductServiceImp productServiceImp;
     private final PaymentInformationRepository paymentInformationRepository;
 
-
+    private final Reviewservice reviewservice;
 
     private  final OrderStatusDetailsRepository orderStatusDetailsRepository;
     private  final AddresRepository addresRepository;
@@ -40,6 +40,9 @@ public class UserController {
     private final ShoppingCartRepository shoppingCartRepository;
     private  final OrderLineRepository orderLineRepository;
  private final Wishlistservices wishlistservices;
+
+
+ private final ReviewRepository reviewRepository;
     private final OrderStatusService orderStatusService;
 
     private final CancelResonsRepository cancelResonsRepository;
@@ -59,9 +62,10 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
 
-    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, Wishlistservices wishlistservices, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, WishlistRepository wishlistRepository, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, Reviewservice reviewservice, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, Wishlistservices wishlistservices, ReviewRepository reviewRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, WishlistRepository wishlistRepository, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.productServiceImp = productServiceImp;
         this.paymentInformationRepository = paymentInformationRepository;
+        this.reviewservice = reviewservice;
         this.orderStatusDetailsRepository = orderStatusDetailsRepository;
         this.addresRepository = addresRepository;
         this.shopOrderRepository = shopOrderRepository;
@@ -69,6 +73,7 @@ public class UserController {
         this.shoppingCartRepository = shoppingCartRepository;
         this.orderLineRepository = orderLineRepository;
         this.wishlistservices = wishlistservices;
+        this.reviewRepository = reviewRepository;
         this.orderStatusService = orderStatusService;
         this.cancelResonsRepository = cancelResonsRepository;
         this.statusRepository = statusRepository;
@@ -523,6 +528,54 @@ public class UserController {
             return new ResponseEntity<>(commonResponse, HttpStatus.BAD_REQUEST);
         }
     }
+    @PostMapping("/addreview/{productId}")
+    public ResponseEntity<CommonResponse<Object>> addreviewrequest(@PathVariable Long productId, @RequestBody ReviewRequest request) {
+        System.out.println("mmmmmmmmmmmmmmmmmmmmmmmm");
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+        System.out.println("kaooooo");
+        try {
+            Review review = new Review();
+            Product product = productRepository.findById(productId).orElse(null);
+            User user = userRepository.findById(request.getUserId()).orElse(null);
+
+            review.setReview(request.getReview());
+            review.setUserfirstname(user.getFirstName());
+            review.setUserlastname(user.getLastName());
+            review.setProduct(product);
+            review.setRating(request.getRating());
+            review.setCreatedAt(LocalDateTime.now());
+
+            reviewRepository.save(review);
+
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(review);
+            commonResponse.setMessage("Review created");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+        }  catch (Exception e) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR));
+            commonResponse.setMessage("An error occurred while processing the request");
+            return new ResponseEntity<>(commonResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @GetMapping("/reviews/{productId}")
+    public ResponseEntity<Object> getReviewsByProductId(@PathVariable Long productId) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+        List<Review> reviews = reviewservice.getAllReviewsByProductId(productId);
+
+        if (reviews.isEmpty()) {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("No reviews found for the specified product.");
+            commonResponse.setResult(Collections.emptyList()); // Optionally, set an empty list as the result
+        } else {
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setResult(reviews);
+            commonResponse.setMessage("All reviews retrieved");
+        }
+
+        return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+    }
+
+
     @PutMapping("/setcancelstatus/{orderLineId}")
     public ResponseEntity<CommonResponse<Object>> setCancelStatus(@PathVariable Long orderLineId) {
         CommonResponse<Object> commonResponse = new CommonResponse<>();
@@ -840,9 +893,9 @@ public class UserController {
         List<Long> productIds = shoppingCartRepository.findDistinctProductIdsByUserId(userId);
 
         if (productIds.isEmpty()) {
-            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
-            commonResponse.setMessage("No product IDs found for the user.");
-            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("No product IDs found for the user from cart.");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
         }
 
         commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
@@ -856,9 +909,9 @@ public class UserController {
         List<Long> productIds = wishlistRepository.findDistinctProductIdsByUserId(userId);
 
         if (productIds.isEmpty()) {
-            commonResponse.setStatuscode(String.valueOf(HttpStatus.NOT_FOUND));
-            commonResponse.setMessage("No product IDs found for the user.");
-            return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
+            commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+            commonResponse.setMessage("No product IDs found for the user from wishlist.");
+            return new ResponseEntity<>(commonResponse, HttpStatus.OK);
         }
 
         commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));

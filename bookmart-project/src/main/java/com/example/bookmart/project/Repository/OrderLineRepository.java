@@ -13,6 +13,6 @@ public interface OrderLineRepository extends JpaRepository<OrderLine,Long> {
     @Query("SELECT ol.id,ol.qty, ol.price,  ol.product ,ol.status FROM OrderLine ol WHERE ol.userId = :userId")
     List<Object[]> findOrderLineDetailsByShopOrderId(@Param("userId") Long userId);
 
-    @Query("SELECT ol.id, ol.qty, ol.price, ol.product, ol.shopOrder.paymentInformation.user.firstName,ol.shopOrder.address,ol.shopOrder.paymentInformation.paymentType,ol.shopOrder.paymentInformation.amount FROM OrderLine ol")
+    @Query("SELECT ol.id, ol.qty, ol.price, ol.product, ol.shopOrder.paymentInformation.user.firstName,ol.shopOrder.address,ol.shopOrder.paymentInformation.paymentType,ol.shopOrder.paymentInformation.amount,ol.shopOrder.id FROM OrderLine ol")
     List<Object[]> findOrderLineDetails();
 }

@@ -36,6 +36,7 @@ public class OrderLineService {
             List<Map<String, Object>> orderLines=orderStatusService.getOrderStatues((Long) result[0]);
 
             orderLineDetails.put("currentstatus" ,orderLines);
+            orderLineDetails.put("cancelstatus" ,result[4]);
             orderLineDetailsList.add(orderLineDetails);
         }
 
@@ -58,8 +59,11 @@ public class OrderLineService {
             orderLineDetails.put("user" ,result[4]);
             orderLineDetails.put("address",result[5]);
             orderLineDetails.put("paymentType",result[6]);
-            orderLineDetails.put("paymentAmt",result[7]);
 
+            orderLineDetails.put("paymentAmt",result[7]);
+            orderLineDetails.put("orderId",result[8]);
+            List<Map<String, Object>> statuses = orderStatusService.getOrderStatues((Long) result[0]);
+            orderLineDetails.put("currentstatus" ,statuses);
             orderLineDetailsList.add(orderLineDetails);
         }
 

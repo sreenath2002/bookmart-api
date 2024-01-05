@@ -149,6 +149,7 @@ public class AuthController {
         authResponse.setFirstName(user.getFirstName());
         authResponse.setLastName(user.getLastName());
         authResponse.setMobile(user.getMobile());
+        authResponse.setProfilepictute(user.getProfileimage());
 
         return new ResponseEntity<>(authResponse, HttpStatus.OK);
     }
