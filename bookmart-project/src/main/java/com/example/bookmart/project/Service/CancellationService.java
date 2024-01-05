@@ -83,17 +83,33 @@ public class CancellationService {
             orderStatusDetails.setStatus(status);
 
             orderStatusDetailsRepository.save(orderStatusDetails);
-          if(paymentmethodname !="Cash On Delivery")
-          {
-              Wallet wallet=new Wallet();
-              wallet.setAmount(orderLine.getPrice());
-              wallet.setProduct(product);
-              wallet.setUser(user);
-              paymentInformation.setAmount(paymentInformation.getAmount()-orderLine.getPrice());
-              wallet.setCreatedAt(LocalDateTime.now());
-              paymentInformationRepository.save(paymentInformation);
-              walletRepository.save(wallet);
-          }
+            if (!paymentmethodname.equals("Cash On Delivery")) {
+                // Check if a wallet exists for the user
+                Optional<Wallet> existingWallet = walletRepository.findByUser(user);
+
+                Wallet wallet;
+                if (existingWallet.isPresent()) {
+
+                    wallet = existingWallet.get();
+                    Integer existingAmount = wallet.getAmount();
+                    wallet.setAmount(existingAmount + orderLine.getPrice());
+                } else {
+
+                    wallet = new Wallet();
+                    wallet.setUser(user);
+                    wallet.setAmount(orderLine.getPrice());
+
+                    wallet.setCreatedAt(LocalDateTime.now());
+                }
+
+
+                paymentInformation.setAmount(paymentInformation.getAmount() - orderLine.getPrice());
+
+
+                paymentInformationRepository.save(paymentInformation);
+                walletRepository.save(wallet);
+            }
+
 
             // Perform any additional operations related to order cancellation here
             // For example, update order status, send notifications, etc.

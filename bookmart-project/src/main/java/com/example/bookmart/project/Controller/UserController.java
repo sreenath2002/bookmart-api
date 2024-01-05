@@ -39,6 +39,8 @@ public class UserController {
     private final PaymentTypeRepository paymentTypeRepository;
     private final ShoppingCartRepository shoppingCartRepository;
     private  final OrderLineRepository orderLineRepository;
+
+    private final WalletRepository walletRepository;
  private final Wishlistservices wishlistservices;
 
 
@@ -62,7 +64,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
 
-    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, Reviewservice reviewservice, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, Wishlistservices wishlistservices, ReviewRepository reviewRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, WishlistRepository wishlistRepository, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, Reviewservice reviewservice, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, WalletRepository walletRepository, Wishlistservices wishlistservices, ReviewRepository reviewRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, WishlistRepository wishlistRepository, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.productServiceImp = productServiceImp;
         this.paymentInformationRepository = paymentInformationRepository;
         this.reviewservice = reviewservice;
@@ -72,6 +74,7 @@ public class UserController {
         this.paymentTypeRepository = paymentTypeRepository;
         this.shoppingCartRepository = shoppingCartRepository;
         this.orderLineRepository = orderLineRepository;
+        this.walletRepository = walletRepository;
         this.wishlistservices = wishlistservices;
         this.reviewRepository = reviewRepository;
         this.orderStatusService = orderStatusService;
@@ -1049,4 +1052,32 @@ public class UserController {
             return new ResponseEntity<>(commonResponse, HttpStatus.NOT_FOUND);
         }
     }
+    @GetMapping("/walletamt/{userId}")
+    public ResponseEntity<Object> getWalletAmountByUserId(@PathVariable Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            Optional<Wallet> walletOptional = walletRepository.findByUser(user);
+
+            if (walletOptional.isPresent()) {
+                Wallet wallet = walletOptional.get();
+                commonResponse.setStatuscode(HttpStatus.OK.toString());
+                commonResponse.setResult(wallet.getAmount());
+                commonResponse.setMessage("Wallet Amount");
+
+                return ResponseEntity.ok(commonResponse);
+            } else {
+                commonResponse.setStatuscode(HttpStatus.OK.toString());
+                commonResponse.setMessage("Wallet not found for the user");
+                return ResponseEntity.status(HttpStatus.OK).body(commonResponse);
+            }
+        } else {
+            commonResponse.setStatuscode(HttpStatus.NOT_FOUND.toString());
+            commonResponse.setMessage("User not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(commonResponse);
+        }
+    }
+
 }

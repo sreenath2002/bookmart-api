@@ -47,7 +47,7 @@ public class OrderPlacedEmailService {
         for (int i = 0; i < productIdList.size(); i++) {
             Long productId = productIdList.get(i);
             Integer qty = qtyList.get(i);
-            Integer price = priceList.get(i);
+            Integer price = priceList.get(i) /qty;
             total += qty * price;
             System.out.println("bibibib");
             System.out.println(productRepository.findTitleById(productId));
