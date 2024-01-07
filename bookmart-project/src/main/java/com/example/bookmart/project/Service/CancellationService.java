@@ -103,10 +103,10 @@ public class CancellationService {
                 }
 
 
-                paymentInformation.setAmount(paymentInformation.getAmount() - orderLine.getPrice());
 
 
-                paymentInformationRepository.save(paymentInformation);
+
+
                 walletRepository.save(wallet);
             }
 

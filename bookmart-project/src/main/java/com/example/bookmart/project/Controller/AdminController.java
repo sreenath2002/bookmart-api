@@ -488,12 +488,12 @@ private final OrderLineService orderLineService;
         CommonResponse<Object> commonResponse = new CommonResponse<>();
 
         try {
-            Cupons existingCoupon = cuponRepository.findByCode(req.getCode());
-            if (existingCoupon != null) {
-                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
-                commonResponse.setMessage("exists");
-                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
-            }
+//            Cupons existingCoupon = cuponRepository.findByCode(req.getCode());
+////            if (existingCoupon != null) {
+////                commonResponse.setStatuscode(String.valueOf(HttpStatus.OK));
+////                commonResponse.setMessage("exists");
+////                return new ResponseEntity<>(commonResponse, HttpStatus.OK);
+////            }
             Optional<Cupons> optionalCupons = cuponRepository.findById(couponId);
 
             if (optionalCupons.isPresent()) {

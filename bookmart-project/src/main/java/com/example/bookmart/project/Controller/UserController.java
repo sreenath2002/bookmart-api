@@ -27,6 +27,8 @@ public class UserController {
     @Autowired
 
     private final ProductServiceImp productServiceImp;
+
+    private final ShoporderService shoporderService;
     private final PaymentInformationRepository paymentInformationRepository;
 
     private final Reviewservice reviewservice;
@@ -64,8 +66,9 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
 
-    public UserController(ProductServiceImp productServiceImp, PaymentInformationRepository paymentInformationRepository, Reviewservice reviewservice, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, WalletRepository walletRepository, Wishlistservices wishlistservices, ReviewRepository reviewRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, WishlistRepository wishlistRepository, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(ProductServiceImp productServiceImp, ShoporderService shoporderService, PaymentInformationRepository paymentInformationRepository, Reviewservice reviewservice, OrderStatusDetailsRepository orderStatusDetailsRepository, AddresRepository addresRepository, ShopOrderRepository shopOrderRepository, PaymentTypeRepository paymentTypeRepository, ShoppingCartRepository shoppingCartRepository, OrderLineRepository orderLineRepository, WalletRepository walletRepository, Wishlistservices wishlistservices, ReviewRepository reviewRepository, OrderStatusService orderStatusService, CancelResonsRepository cancelResonsRepository, StatusRepository statusRepository, UserServiceImp userServiceImp, AddressServiceImp addressServiceImp, CartService cartService, WishlistRepository wishlistRepository, CuponRepository cuponRepository, CancellationService cancellationService, OrderLineService orderLineService, ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.productServiceImp = productServiceImp;
+        this.shoporderService = shoporderService;
         this.paymentInformationRepository = paymentInformationRepository;
         this.reviewservice = reviewservice;
         this.orderStatusDetailsRepository = orderStatusDetailsRepository;
@@ -1079,5 +1082,34 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(commonResponse);
         }
     }
+    @GetMapping("/transaction/{userId}")
+    public ResponseEntity<Object> getTransactionDetailsByUserId(@PathVariable Long userId) {
+        CommonResponse<Object> commonResponse = new CommonResponse<>();
+
+        try {
+            List<Object[]> shopOrders = shoporderService.getOrdersForUserWithNonCashPayments(userId);
+
+            if (shopOrders.isEmpty()) {
+                commonResponse.setStatuscode(HttpStatus.OK.toString());
+                commonResponse.setMessage("No transactions ");
+                return ResponseEntity.status(HttpStatus.OK).body(commonResponse);
+            }
+
+            commonResponse.setStatuscode(HttpStatus.OK.toString());
+            commonResponse.setResult(shopOrders);
+            commonResponse.setMessage("transcations");
+            return ResponseEntity.ok(commonResponse);
+        } catch (Exception e) {
+            // Log the exception details for debugging
+            e.printStackTrace(); // Or use a logging framework like SLF4J/Logback
+
+            // Return a generic error message
+            commonResponse.setStatuscode(HttpStatus.INTERNAL_SERVER_ERROR.toString());
+            commonResponse.setMessage("An error occurred while processing the request.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonResponse);
+        }
+    }
+
+
 
 }
